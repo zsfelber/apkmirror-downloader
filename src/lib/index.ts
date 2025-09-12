@@ -66,7 +66,9 @@ export class APKMirrorDownloader {
     let variantsUrl: string | undefined;
     if ((typeof o.version!="string") || isSpecialAppVersionToken(o.version)) {
       const repoUrl = makeRepoUrl(app);
+      console.log("repoUrl:", repoUrl);
       const versions = await getVersions(repoUrl);
+      console.log("versions:", versions);
 
       let isRgxVersion = (version: Version)=>{
         return version.name.match(o.version);
