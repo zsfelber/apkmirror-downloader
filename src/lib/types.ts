@@ -27,6 +27,7 @@ export type AppArch =
 export type App = {
   org: string;
   repo: string;
+  repoUrl: string;
 };
 
 export type AppOptions = {
