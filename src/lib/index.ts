@@ -96,6 +96,7 @@ export class APKMirrorDownloader {
       for (let matchedVersion of matchedVersions) {
         console.log(`Downloading ${matchedVersion.name}...`);
         await this.downloadAllVariants(app, options, matchedVersion.url);
+        console.log(`\n\n`);
       }
     } else {
       let variantsUrl = makeVariantsUrl(app, o.version);
