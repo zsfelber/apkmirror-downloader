@@ -1,3 +1,5 @@
+import type { StringMappingType } from "typescript";
+
 export const SUPPORTED_APP_TYPES = {
   apk: "apk",
   bundle: "bundle",
@@ -28,6 +30,7 @@ export type App = {
   org: string;
   repo: string;
   repoUrl?: string;
+  listViewHeaderText?: string;
 };
 
 export type AppOptions = {

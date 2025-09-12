@@ -3,13 +3,16 @@ import { load } from "cheerio";
 import { isNotNull } from "../../utils/typescript";
 import { withBaseUrl } from "../utils";
 
-export function getVersions(repoPageUrl: string) {
+export function getVersions(repoPageUrl: string, listViewHeaderText?: string) {
+  let extrVersWthUploads = (versionsPageHtml: string)=>{
+    return extractVersions(versionsPageHtml, listViewHeaderText);
+  }
   return fetch(repoPageUrl)
     .then(res => res.text())
-    .then(extractVersions);
+    .then(extrVersWthUploads);
 }
 
-export function extractVersions(versionsPageHtml: string) {
+export function extractVersions(versionsPageHtml: string, listViewHeaderText?: string) {
   const $ = load(versionsPageHtml);
 
   if (versionsPageHtml.includes("Enable JavaScript and cookies to continue")) {
@@ -19,6 +22,10 @@ export function extractVersions(versionsPageHtml: string) {
   }
 
   const table = $('.listWidget:has(a[name="all_versions"])').first();
+  if (!table && listViewHeaderText) {
+    // <h5 class="widgetHeader">Latest Google Chrome Uploads</h5>
+    const table = $(`.listWidget:has(h5[class="${listViewHeaderText}"])`).first();
+  }
   if (!table) {
     throw new Error("Could not find versions table");
   }
