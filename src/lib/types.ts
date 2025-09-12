@@ -1,4 +1,3 @@
-import type { StringMappingType } from "typescript";
 
 export const SUPPORTED_APP_TYPES = {
   apk: "apk",
@@ -57,3 +56,9 @@ export type Variant = {
     dpi?:string,
     url:string
 };
+
+export type Result = {
+  redirected: boolean;
+  variants?: Variant[];
+  url?: string;
+}

@@ -18,7 +18,7 @@ export function extractVersions(versionsPageHtml: string, listViewHeaderText?: s
 
   if (versionsPageHtml.includes("Enable JavaScript and cookies to continue")) {
     throw new Error(
-      "This page cannot be loaded without JavaScript and cookies enabled :(",
+      "robot detected",
     );
   }
 

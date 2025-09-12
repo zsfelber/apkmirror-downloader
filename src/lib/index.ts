@@ -8,7 +8,7 @@ import type { LooseAutocomplete } from "../utils/types";
 import { getFinalDownloadUrl } from "./scrapers/downloads";
 import { getVariants, RedirectError } from "./scrapers/variants";
 import { getVersions } from "./scrapers/versions";
-import type { App, AppArch, AppOptions, SpecialAppVersionToken, Variant, Version } from "./types";
+import type { App, AppArch, AppOptions, Result, SpecialAppVersionToken, Variant, Version } from "./types";
 import {
   extractFileNameFromUrl,
   isAlphaVersion,
@@ -44,6 +44,16 @@ export type AppOptionsWithSuggestions = AppOptions & {
   version?: LooseAutocomplete<SpecialAppVersionToken>;
 };
 
+function delayAsync(millis:number, val?) {
+    return new Promise<void>(resolve => {
+        //console.log("WAIT:", millis);
+        setTimeout(()=>{
+            console.log("WAIT:", millis, " FINISHED");
+            resolve(val);
+        }, millis);
+    });
+}
+
 export class APKMirrorDownloader {
   #options: APKMDOptions;
 
@@ -66,7 +76,21 @@ export class APKMirrorDownloader {
     if ((typeof o.version!="string") || isSpecialAppVersionToken(o.version)) {
       const repoUrl = makeRepoUrl(app);
       console.log("repoUrl:", repoUrl);
-      const versions = await getVersions(repoUrl, app.listViewHeaderText);
+
+      let versions: Version[] = [];
+      for (let i=0; i<10; ++i) {
+        try {
+          versions = await getVersions(repoUrl, app.listViewHeaderText);
+        } catch (e:any) {
+          if (e.message=="robot detected") {
+            console.log(e.message+" try again (after 10 sec)..");
+            await delayAsync(10000);
+          } else {
+            throw e;
+          }
+        }
+      }
+
 
       let isRgxVersion = (version: Version)=>{
         return version.name.match(o.version);
@@ -112,21 +136,27 @@ export class APKMirrorDownloader {
       throw new Error("Could not find any suitable version");
     }
 
-    const result = await getVariants(variantsUrl)
-      .then(variants => ({ redirected: false as const, variants }))
-      .catch(err => {
-        if (err instanceof RedirectError) {
-          return {
-            redirected: true as const,
-            url: err.message,
-            variants: null,
+    let result: Result;
+
+    let variants: Variant[] = [];
+    for (let i=0; i<10; ++i) {
+      try {
+        variants = await getVariants(variantsUrl);
+        result =  { redirected: false, variants };
+      } catch (e:any) {
+        if (e.message=="robot detected") {
+          console.log(e.message+" try again (after 10 sec)..");
+          await delayAsync(10000);
+        } else if (e instanceof RedirectError) {
+          result = {
+            redirected: true,
+            url: e.message
           };
+        } else {
+          throw e;
         }
-
-        throw err;
-      });
-
-    let variants: Variant[];
+      }
+    }
 
     if (result.redirected) {
       console.warn(

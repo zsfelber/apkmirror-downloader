@@ -24,7 +24,7 @@ export function extractVariants(variantsPageHtml: string): Variant[] {
 
   if (variantsPageHtml.includes("Enable JavaScript and cookies to continue")) {
     throw new Error(
-      "This page cannot be loaded without JavaScript and cookies enabled :(",
+      "robot detected",
     );
   }
 
