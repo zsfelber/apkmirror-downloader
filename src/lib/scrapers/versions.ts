@@ -21,10 +21,20 @@ export function extractVersions(versionsPageHtml: string, listViewHeaderText?: s
     );
   }
 
-  const table = $('.listWidget:has(a[name="all_versions"])').first();
-  if (!table && listViewHeaderText) {
+  let table: cheerio.Cheerio|null = $('.listWidget:has(a[name="all_versions"])').first();
+  if (!table.length && listViewHeaderText) {
     // <h5 class="widgetHeader">Latest Google Chrome Uploads</h5>
-    const table = $(`.listWidget:has(h5[class="${listViewHeaderText}"])`).first();
+    //const h5 = $(`h5[class='widgetHeader'][text()='${listViewHeaderText}']`).first();
+    let h5s = $(`h5[class='widgetHeader']`);
+    let h5 = h5s.first();
+    if (h5.text()==listViewHeaderText) {
+      console.log("h5 text matches:", listViewHeaderText);
+    } else {
+      console.log("h5 text doesn't match:", h5.text()," expected:", listViewHeaderText);
+    }
+
+    console.log("h5:", h5);
+    table = h5.length ? h5.parent().first() : null;
   }
   if (!table) {
     throw new Error("Could not find versions table");
