@@ -81,6 +81,7 @@ export class APKMirrorDownloader {
       for (let i=0; i<10; ++i) {
         try {
           versions = await getVersions(repoUrl, app.listViewHeaderText);
+          break;
         } catch (e:any) {
           if (e.message=="robot detected") {
             console.log(e.message+" try again (after 10 sec)..");
@@ -143,6 +144,7 @@ export class APKMirrorDownloader {
       try {
         variants = await getVariants(variantsUrl);
         result =  { redirected: false, variants };
+        break;
       } catch (e:any) {
         if (e.message=="robot detected") {
           console.log(e.message+" try again (after 10 sec)..");
