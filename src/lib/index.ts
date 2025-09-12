@@ -137,23 +137,26 @@ export class APKMirrorDownloader {
       }];
     } else {
       variants = result.variants;
-      console.log("variants:", variants);
+      console.log("variants:", variants.length);
 
       // filter by arch
       if (o.arch !== "universal" && o.arch !== "noarch") {
-        variants = variants.find(v => v.arch === o.arch)
-          ? variants.filter(v => v.arch === o.arch)
+
+        let variants1 = variants.filter(v => v.arch?.match(new RegExp("\\b"+o.arch+"\\b")));
+
+        variants = variants1.length
+          ? variants1
           : variants.filter(isUniversalVariant); // fallback to universal
       } else {
         variants = variants.filter(isUniversalVariant);
       }
-      console.log(`variants(arch:${o.arch}):`, variants);
+      console.log(`variants(arch:${o.arch}):`, variants.length);
 
       // filter by dpi
       if (o.dpi !== "*" && o.dpi !== "any") {
         variants = variants.filter(v => v.dpi === o.dpi);
       }
-      console.log(`variants(dpi:${o.dpi}):`, variants);
+      console.log(`variants(dpi:${o.dpi}):`, variants.length);
 
       // filter by minAndroidVersion
       if (o.minAndroidVersion) {
@@ -162,7 +165,9 @@ export class APKMirrorDownloader {
             parseFloat(v.minAndroidVersion!) <= parseFloat(o.minAndroidVersion!),
         );
       }
-      console.log(`variants(minAndroidVersion:${o.minAndroidVersion}):`, variants);
+      console.log(`variants(minAndroidVersion:${o.minAndroidVersion}):`, variants.length);
+
+      console.log(`variants:`, variants);
 
       // filter by type
       variants = variants.filter(v => v.type === o.type);
