@@ -2,6 +2,7 @@ import { load } from "cheerio";
 
 import { isNotNull } from "../../utils/typescript";
 import { withBaseUrl } from "../utils";
+import type { Version } from "../types";
 
 export function getVersions(repoPageUrl: string, listViewHeaderText?: string) {
   let extrVersWthUploads = (versionsPageHtml: string)=>{
@@ -12,7 +13,7 @@ export function getVersions(repoPageUrl: string, listViewHeaderText?: string) {
     .then(extrVersWthUploads);
 }
 
-export function extractVersions(versionsPageHtml: string, listViewHeaderText?: string) {
+export function extractVersions(versionsPageHtml: string, listViewHeaderText?: string): Version[] {
   const $ = load(versionsPageHtml);
 
   if (versionsPageHtml.includes("Enable JavaScript and cookies to continue")) {
@@ -63,4 +64,4 @@ export function extractVersions(versionsPageHtml: string, listViewHeaderText?: s
   return versions.filter(isNotNull);
 }
 
-export type Version = ReturnType<typeof extractVersions>[number];
+//export type Version = ReturnType<typeof extractVersions>[number];

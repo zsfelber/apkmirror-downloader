@@ -43,3 +43,17 @@ export type AppOptions = {
   outDir?: string;
   overwrite?: boolean;
 };
+
+export type Version = {
+  name:string,
+  url:string
+};
+
+export type Variant = {
+    version?:string,
+    type?:string,
+    arch?:string,
+    minAndroidVersion?:string,
+    dpi?:string,
+    url:string
+};

@@ -7,8 +7,8 @@ import { ensureExtension } from "../utils/path";
 import type { LooseAutocomplete } from "../utils/types";
 import { getFinalDownloadUrl } from "./scrapers/downloads";
 import { getVariants, RedirectError } from "./scrapers/variants";
-import { getVersions, type Version } from "./scrapers/versions";
-import type { App, AppArch, AppOptions, SpecialAppVersionToken } from "./types";
+import { getVersions } from "./scrapers/versions";
+import type { App, AppArch, AppOptions, SpecialAppVersionToken, Variant, Version } from "./types";
 import {
   extractFileNameFromUrl,
   isAlphaVersion,
@@ -74,23 +74,38 @@ export class APKMirrorDownloader {
         return version.name.match(o.version);
       };
 
-      const selectedVersion = match(o.version)
+      /*const selectedVersion = match(o.version)
         .with("latest", () => versions[0])
         .with("beta", () => versions.find(isBetaVersion))
         .with("alpha", () => versions.find(isAlphaVersion))
         .with("stable", () => versions.find(isStableVersion))
-        .otherwise(() => versions.find(isRgxVersion));
-
-      if (!selectedVersion) {
-        throw new Error(`Could not find any suitable ${o.version} version`);
+        .otherwise(() => versions.find(isRgxVersion));*/
+      let matchedVersions: Version[] = [];
+      switch (o.version) {
+      case "latest": matchedVersions[0] = versions[0]; break;
+      case "beta":   matchedVersions = versions.filter(isBetaVersion); break;
+      case "alpha":  matchedVersions = versions.filter(isAlphaVersion); break;
+      case "stable": matchedVersions = versions.filter(isStableVersion); break;
+      default:       matchedVersions = versions.filter(isRgxVersion); break;
       }
 
-      variantsUrl = selectedVersion.url;
-      console.log(`Downloading ${selectedVersion.name}...`);
+      if (!matchedVersions.length) {
+        console.warn(`WARN Could not find any suitable ${o.version} version`);
+      }
+
+      for (let matchedVersion of matchedVersions) {
+        variantsUrl = matchedVersion.url;
+        console.log(`Downloading ${matchedVersion.name}...`);
+      }
     } else {
       variantsUrl = makeVariantsUrl(app, o.version);
       console.log(`Downloading ${app.repo} ${o.version}...`);
+      await this.downloadAllVariants(app, options, variantsUrl);
     }
+  }
+
+  static async downloadAllVariants(app: App, options: AppOptionsWithSuggestions, variantsUrl: string) {
+    const o = { ...DEFAULT_APP_OPTIONS, ...cleanObject(options) };
 
     if (!variantsUrl) {
       throw new Error("Could not find any suitable version");
@@ -110,17 +125,19 @@ export class APKMirrorDownloader {
         throw err;
       });
 
-    let selectedVariant = null;
+    let variants: Variant[];
+
     if (result.redirected) {
       console.warn(
         "[WARNING]",
         `Only single variant is supported for ${app.org}/${app.repo}`,
       );
-      selectedVariant = {
-        url: result.url,
-      };
+      variants = [{
+        url: result.url
+      }];
     } else {
-      let variants = result.variants;
+      variants = result.variants;
+      console.log("variants:", variants);
 
       // filter by arch
       if (o.arch !== "universal" && o.arch !== "noarch") {
@@ -130,29 +147,42 @@ export class APKMirrorDownloader {
       } else {
         variants = variants.filter(isUniversalVariant);
       }
+      console.log(`variants(arch:${o.arch}):`, variants);
 
       // filter by dpi
       if (o.dpi !== "*" && o.dpi !== "any") {
         variants = variants.filter(v => v.dpi === o.dpi);
       }
+      console.log(`variants(dpi:${o.dpi}):`, variants);
 
       // filter by minAndroidVersion
       if (o.minAndroidVersion) {
         variants = variants.filter(
           v =>
-            parseFloat(v.minAndroidVersion) <= parseFloat(o.minAndroidVersion!),
+            parseFloat(v.minAndroidVersion!) <= parseFloat(o.minAndroidVersion!),
         );
       }
+      console.log(`variants(minAndroidVersion:${o.minAndroidVersion}):`, variants);
 
       // filter by type
       variants = variants.filter(v => v.type === o.type);
+      console.log(`variants(type:${o.type}):`, variants);
 
-      selectedVariant = variants[0];
     }
 
-    if (!selectedVariant) {
-      throw new Error("Could not find any suitable variant");
+    if (!variants.length) {
+      console.warn(`WARN Could not find any suitable variant`);
     }
+
+    for (let variant of variants) {
+      this.downloadVariant(options, variant);
+    }
+  }
+
+  static async downloadVariant(options: AppOptionsWithSuggestions, selectedVariant: Variant) {
+    console.log(`Downloading variant ${JSON.stringify(selectedVariant)}...`);
+
+    const o = { ...DEFAULT_APP_OPTIONS, ...cleanObject(options) };
 
     const finalDownloadUrl = await getFinalDownloadUrl(selectedVariant.url);
 

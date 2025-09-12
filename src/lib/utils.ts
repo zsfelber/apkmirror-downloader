@@ -1,9 +1,9 @@
-import type { Variant } from "./scrapers/variants";
-import type { Version } from "./scrapers/versions";
 import {
   SPECIAL_APP_VERSION_TOKENS,
   type App,
   type SpecialAppVersionToken,
+  type Variant,
+  type Version,
 } from "./types";
 
 export function withBaseUrl(endpoint: string) {

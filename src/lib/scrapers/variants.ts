@@ -2,7 +2,7 @@ import { load } from "cheerio";
 import { match } from "ts-pattern";
 
 import { isNotNull } from "../../utils/typescript";
-import { SUPPORTED_APP_TYPES } from "../types";
+import { SUPPORTED_APP_TYPES, type Variant } from "../types";
 import { withBaseUrl } from "../utils";
 
 export class RedirectError extends Error {}
@@ -19,7 +19,7 @@ export function getVariants(variantsPageUrl: string) {
     .then(extractVariants);
 }
 
-export function extractVariants(variantsPageHtml: string) {
+export function extractVariants(variantsPageHtml: string): Variant[] {
   const $ = load(variantsPageHtml);
 
   if (variantsPageHtml.includes("Enable JavaScript and cookies to continue")) {
@@ -74,4 +74,4 @@ export function extractVariants(variantsPageHtml: string) {
   return variants.filter(isNotNull);
 }
 
-export type Variant = ReturnType<typeof extractVariants>[number];
+//export type Variant = ReturnType<typeof extractVariants>[number];
