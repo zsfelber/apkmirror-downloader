@@ -65,7 +65,7 @@ export class APKMirrorDownloader {
 
     let variantsUrl: string | undefined;
     if ((typeof o.version!="string") || isSpecialAppVersionToken(o.version)) {
-      const repoUrl = app.repoUrl || makeRepoUrl(app);
+      const repoUrl = makeRepoUrl(app);
       console.log("repoUrl:", repoUrl);
       const versions = await getVersions(repoUrl);
       console.log("versions:", versions);

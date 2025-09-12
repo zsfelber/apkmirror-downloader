@@ -14,8 +14,8 @@ export function withBaseUrl(endpoint: string) {
   return `https://www.apkmirror.com/${endpoint}`;
 }
 
-export function makeRepoUrl({ org, repo }: App) {
-  return withBaseUrl(`/apk/${org}/${repo}`);
+export function makeRepoUrl({ org, repo, repoUrl }: App) {
+  return repoUrl || withBaseUrl(`/apk/${org}/${repo}`);
 }
 
 export function makeVariantsUrl({ org, repo }: App, version: string) {
