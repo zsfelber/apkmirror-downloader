@@ -63,12 +63,10 @@ export class APKMirrorDownloader {
   static async download(app: App, options: AppOptionsWithSuggestions = {}) {
     const o = { ...DEFAULT_APP_OPTIONS, ...cleanObject(options) };
 
-    let variantsUrl: string | undefined;
     if ((typeof o.version!="string") || isSpecialAppVersionToken(o.version)) {
       const repoUrl = makeRepoUrl(app);
       console.log("repoUrl:", repoUrl);
       const versions = await getVersions(repoUrl, app.listViewHeaderText);
-      console.log("versions:", versions);
 
       let isRgxVersion = (version: Version)=>{
         return version.name.match(o.version);
@@ -93,12 +91,14 @@ export class APKMirrorDownloader {
         console.warn(`WARN Could not find any suitable ${o.version} version`);
       }
 
+      console.log("total versions:", versions.length," matching:", matchedVersions.length);
+
       for (let matchedVersion of matchedVersions) {
-        variantsUrl = matchedVersion.url;
         console.log(`Downloading ${matchedVersion.name}...`);
+        await this.downloadAllVariants(app, options, matchedVersion.url);
       }
     } else {
-      variantsUrl = makeVariantsUrl(app, o.version);
+      let variantsUrl = makeVariantsUrl(app, o.version);
       console.log(`Downloading ${app.repo} ${o.version}...`);
       await this.downloadAllVariants(app, options, variantsUrl);
     }

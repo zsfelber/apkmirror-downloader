@@ -34,7 +34,7 @@ export function extractVersions(versionsPageHtml: string, listViewHeaderText?: s
       console.log("h5 text doesn't match:", h5.text()," expected:", listViewHeaderText);
     }
 
-    console.log("h5:", h5);
+    //console.log("h5:", h5);
     table = h5.length ? h5.parent().first() : null;
   }
   if (!table) {
