@@ -202,6 +202,9 @@ export class APKMirrorDownloader {
       const dest = `${outDir}/${outFile}`;
 
       if (!o.overwrite && existsSync(dest)) {
+
+        console.log(`(!overwrite+exists:skipped)\n`);
+
         return { dest, skipped: true as const };
       }
 
