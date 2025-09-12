@@ -168,11 +168,12 @@ export class APKMirrorDownloader {
       }
       console.log(`variants(minAndroidVersion:${o.minAndroidVersion}):`, variants.length);
 
-      console.log(`variants:`, variants);
-
       // filter by type
       variants = variants.filter(v => v.type === o.type);
-      console.log(`variants(type:${o.type}):`, variants);
+      console.log(`variants(type:${o.type}):`, variants.length);
+
+
+      console.log(`variants:`, variants);
 
     }
 
@@ -205,6 +206,9 @@ export class APKMirrorDownloader {
       }
 
       await Bun.write(dest, res);
+
+      console.log(`\n`);
+
       return { dest, skipped: false as const };
     });
   }
