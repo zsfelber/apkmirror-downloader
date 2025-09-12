@@ -7,7 +7,7 @@ import { ensureExtension } from "../utils/path";
 import type { LooseAutocomplete } from "../utils/types";
 import { getFinalDownloadUrl } from "./scrapers/downloads";
 import { getVariants, RedirectError } from "./scrapers/variants";
-import { getVersions } from "./scrapers/versions";
+import { getVersions, type Version } from "./scrapers/versions";
 import type { App, AppArch, AppOptions, SpecialAppVersionToken } from "./types";
 import {
   extractFileNameFromUrl,
@@ -64,15 +64,20 @@ export class APKMirrorDownloader {
     const o = { ...DEFAULT_APP_OPTIONS, ...cleanObject(options) };
 
     let variantsUrl: string | undefined;
-    if (isSpecialAppVersionToken(o.version)) {
+    if ((typeof o.version!="string") || isSpecialAppVersionToken(o.version)) {
       const repoUrl = makeRepoUrl(app);
       const versions = await getVersions(repoUrl);
+
+      let isRgxVersion = (version: Version)=>{
+        return version.name.match(o.version);
+      };
 
       const selectedVersion = match(o.version)
         .with("latest", () => versions[0])
         .with("beta", () => versions.find(isBetaVersion))
         .with("alpha", () => versions.find(isAlphaVersion))
-        .otherwise(() => versions.find(isStableVersion));
+        .with("stable", () => versions.find(isStableVersion))
+        .otherwise(() => versions.find(isRgxVersion));
 
       if (!selectedVersion) {
         throw new Error(`Could not find any suitable ${o.version} version`);

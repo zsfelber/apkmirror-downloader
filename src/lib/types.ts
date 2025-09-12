@@ -30,7 +30,7 @@ export type App = {
 };
 
 export type AppOptions = {
-  version?: string;
+  version?: string|RegExp;
   arch?: string;
   dpi?: string;
   type?: AppType;

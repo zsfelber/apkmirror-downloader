@@ -37,6 +37,7 @@ export function isSpecialAppVersionToken<T>(
   return (SPECIAL_APP_VERSION_TOKENS as readonly string[]).includes(token);
 }
 
+
 export function isUniversalVariant(variant: Variant) {
   return variant.arch === "universal" || variant.arch === "noarch";
 }
