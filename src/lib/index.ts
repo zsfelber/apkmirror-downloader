@@ -220,33 +220,54 @@ export class APKMirrorDownloader {
   }
 
   static async downloadVariant(options: AppOptionsWithSuggestions, selectedVariant: Variant) {
-    console.log(`Downloading variant ${JSON.stringify(selectedVariant)}...`);
 
     const o = { ...DEFAULT_APP_OPTIONS, ...cleanObject(options) };
 
-    const downloadUrl = await getFinalDownloadUrl(selectedVariant.url);
+    const finalDownloadUrl = await getFinalDownloadUrl(selectedVariant.url);
 
-    return fetch(downloadUrl).then(async res => {
-      const filename = extractFileNameFromUrl(res.url);
-      const extension = filename.split(".").pop()!;
+    console.log(`Downloading variant ${JSON.stringify(selectedVariant)}  finalDownloadUrl:${finalDownloadUrl}...`);
 
-      const outDir = o.outDir ?? ".";
-      const outFile = ensureExtension(o.outFile ?? filename, extension);
-      const dest = `${outDir}/${outFile}`;
+    const filename = extractFileNameFromUrl(finalDownloadUrl);
+    const extension = filename.split(".").pop()!;
 
-      if (!o.overwrite && existsSync(dest)) {
+    const outDir = o.outDir ?? ".";
+    const outFile = ensureExtension(o.outFile ?? filename, extension);
+    const dest = `${outDir}/${outFile}`;
 
-        console.log(`(!overwrite+exists:skipped)\n`);
+    if (!o.overwrite && existsSync(dest)) {
 
-        return { dest, skipped: true as const };
-      }
+      console.log(`(!overwrite+exists:skipped)\n`);
 
-      await Bun.write(dest, res);
+      return { dest, skipped: true as const };
 
-      console.log(`\n`);
+    } else {
 
-      return { dest, skipped: false as const };
-    });
+      return fetch(finalDownloadUrl).then(async res => {
+        const filename2 = extractFileNameFromUrl(res.url);
+        if (filename != filename2) {
+          throw new Error(`Invalid filename:${filename2} expected:${filename}`);
+        }
+        /*const extension = filename.split(".").pop()!;
+
+        const outDir = o.outDir ?? ".";
+        const outFile = ensureExtension(o.outFile ?? filename, extension);
+        const dest = `${outDir}/${outFile}`;
+
+        if (!o.overwrite && existsSync(dest)) {
+
+          console.log(`(!overwrite+exists:skipped)\n`);
+
+          return { dest, skipped: true as const };
+        }*/
+
+        await Bun.write(dest, res);
+
+        console.log(`\n`);
+
+        return { dest, skipped: false as const };
+      });
+
+    }
 
 
     /*
