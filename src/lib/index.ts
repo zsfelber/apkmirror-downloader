@@ -193,8 +193,8 @@ export class APKMirrorDownloader {
         break;
       } catch (e:any) {
         if (e.message=="robot detected") {
-          console.log(e.message+" try again (after 10 sec)..");
-          await delayAsync(10000);
+          console.log(e.message+" try again (after 30 sec)..");
+          await delayAsync(30000);
         } else if (e instanceof RedirectError) {
           result = {
             redirected: true,
