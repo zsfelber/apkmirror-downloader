@@ -22,20 +22,57 @@ export function extractVersions(versionsPageHtml: string, listViewHeaderText?: s
     );
   }
 
-  let table: cheerio.Cheerio|null = $('.listWidget:has(a[name="all_versions"])').first();
-  if (!table.length && listViewHeaderText) {
-    // <h5 class="widgetHeader">Latest Google Chrome Uploads</h5>
-    //const h5 = $(`h5[class='widgetHeader'][text()='${listViewHeaderText}']`).first();
-    let h5s = $(`h5[class='widgetHeader']`);
-    let h5 = h5s.first();
-    if (h5.text()==listViewHeaderText) {
-      console.log("h5 text matches:", listViewHeaderText);
+  let findXpath=(xpath:string): cheerio.Cheerio=>{
+    let elem = $(xpath);
+    if (elem.length) {
+      console.log(`Found '${xpath}'  length:${elem.length}`);
+      elem = elem.first();
     } else {
-      console.log("h5 text doesn't match:", h5.text()," expected:", listViewHeaderText);
+      console.log(`'${xpath}' Not Found`);
+      elem = null;
     }
+    return elem;
+  }
 
-    //console.log("h5:", h5);
-    table = h5.length ? h5.parent().first() : null;
+  let table: cheerio.Cheerio = findXpath('.listWidget:has(a[name="all_versions"])');
+
+  if (!table && listViewHeaderText) {
+
+    let h5 = findXpath(`h5[class='widgetHeader']`);
+    if (h5) {
+      // <h5 class="widgetHeader">Latest Google Chrome Uploads</h5>
+      let tx = h5.text().trim();
+      if (tx==listViewHeaderText) {
+        console.log("h5 text matches:", listViewHeaderText);
+
+        //console.log("h5:", h5);
+        table = h5.parent();
+      } else {
+        console.log(`whd text doesn't match:'${tx}' expected:'${listViewHeaderText}'`);
+      }
+    }
+    
+    if (!table) {
+
+      //not working
+      //let whd = findXpath(`div[class='widgetHeader'][class='search-header']`);
+      let whd = findXpath(`div[class='widgetHeader search-header']`);
+      if (whd) {
+        //<div class="widgetHeader search-header">
+        //    Results for <span style="word-break:break-all">“chrome”</span> <a href="#searchtips" data-toggle="modal">(search tips)</a>
+        //</div>
+        //text: 'Results for “chrome” (search tips)'
+
+        let tx = whd.text().trim();
+        if (tx==listViewHeaderText) {
+          console.log("whd text matches:", listViewHeaderText);
+          table = whd.nextAll();
+        } else {
+          console.log(`whd text doesn't match:'${tx}' expected:'${listViewHeaderText}'`);
+        }
+
+      }
+    }
   }
   if (!table) {
     throw new Error("Could not find versions table");
