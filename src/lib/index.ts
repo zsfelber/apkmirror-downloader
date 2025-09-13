@@ -117,8 +117,8 @@ export class APKMirrorDownloader {
           break;
         } catch (e:any) {
           if (e.message=="robot detected") {
-            console.log(e.message+" try again (after 10 sec)..");
-            await delayAsync(10000);
+            console.log(e.message+" try again (after 30 sec)..");
+            await delayAsync(30000);
           } else {
             throw e;
           }
@@ -286,23 +286,34 @@ export class APKMirrorDownloader {
         const outFile = ensureExtension(o.outFile ?? filename, extension);
         const dest = `${outDir}/${outFile}`;
 
+        if (outFile=="download.php") {
+          console.log("WARN Got 'download.php', saved to tmp download failures.");
+          this.addDownloadFailure(selectedVariantUrl);
+          console.log("waiting 10 sec..");
+          await delayAsync(10000);
+          return { dest, skipped: true };
+        }
+
         if (!o.overwrite && existsSync(dest)) {
 
           console.log(`(!overwrite+exists:skipped)\n`);
 
-          return { dest, skipped: true as const };
+          return { dest, skipped: true };
         }
 
         await Bun.write(dest, res);
 
         console.log(`\n`);
 
-        return { dest, skipped: false as const };
+        return { dest, skipped: false };
       });
     } catch (e) {
       if (e instanceof RedirectError) {
         console.log("WARN "+e.message+", saved to tmp download failures.");
         this.addDownloadFailure(selectedVariantUrl);
+        console.log("waiting 10 sec..");
+        await delayAsync(10000);
+        return { dest:null, skipped: true };
       } else {
         throw e;
       }
