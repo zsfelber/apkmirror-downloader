@@ -227,47 +227,27 @@ export class APKMirrorDownloader {
 
     console.log(`Downloading variant ${JSON.stringify(selectedVariant)}  finalDownloadUrl:${finalDownloadUrl}...`);
 
-    const filename = extractFileNameFromUrl(finalDownloadUrl);
-    const extension = filename.split(".").pop()!;
+    return fetch(finalDownloadUrl).then(async res => {
+      const filename = extractFileNameFromUrl(res.url);
+      const extension = filename.split(".").pop()!;
 
-    const outDir = o.outDir ?? ".";
-    const outFile = ensureExtension(o.outFile ?? filename, extension);
-    const dest = `${outDir}/${outFile}`;
+      const outDir = o.outDir ?? ".";
+      const outFile = ensureExtension(o.outFile ?? filename, extension);
+      const dest = `${outDir}/${outFile}`;
 
-    if (!o.overwrite && existsSync(dest)) {
+      if (!o.overwrite && existsSync(dest)) {
 
-      console.log(`(!overwrite+exists:skipped)\n`);
+        console.log(`(!overwrite+exists:skipped)\n`);
 
-      return { dest, skipped: true as const };
+        return { dest, skipped: true as const };
+      }
 
-    } else {
+      await Bun.write(dest, res);
 
-      return fetch(finalDownloadUrl).then(async res => {
-        const filename2 = extractFileNameFromUrl(res.url);
-        if (filename != filename2) {
-          throw new Error(`Invalid filename:${filename2} expected:${filename}`);
-        }
-        /*const extension = filename.split(".").pop()!;
+      console.log(`\n`);
 
-        const outDir = o.outDir ?? ".";
-        const outFile = ensureExtension(o.outFile ?? filename, extension);
-        const dest = `${outDir}/${outFile}`;
-
-        if (!o.overwrite && existsSync(dest)) {
-
-          console.log(`(!overwrite+exists:skipped)\n`);
-
-          return { dest, skipped: true as const };
-        }*/
-
-        await Bun.write(dest, res);
-
-        console.log(`\n`);
-
-        return { dest, skipped: false as const };
-      });
-
-    }
+      return { dest, skipped: false as const };
+    });
 
 
     /*
