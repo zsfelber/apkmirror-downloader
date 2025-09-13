@@ -250,9 +250,6 @@ export class APKMirrorDownloader {
       variants = variants.filter(v => v.type === o.type);
       console.log(`variants(type:${o.type}):`, variants.length);
 
-
-      console.log(`variants:`, variants);
-
     }
 
     if (!variants.length) {
