@@ -41,6 +41,7 @@ export type AppOptions = {
   outFile?: string;
   outDir?: string;
   overwrite?: boolean;
+  retryDownloadFailures?: boolean;
 };
 
 export type Version = {

@@ -1,4 +1,4 @@
-import { existsSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 
 import { match } from "ts-pattern";
 
@@ -34,6 +34,7 @@ const DEFAULT_APP_OPTIONS = {
   arch: "universal",
   dpi: "nodpi",
   overwrite: true,
+  retryDownloadFailures: true,
 } satisfies AppOptions;
 
 export type APKMDOptionsWithSuggestions = APKMDOptions & {
@@ -71,8 +72,39 @@ export class APKMirrorDownloader {
     return APKMirrorDownloader.download(app, o);
   }
 
+  static downloadFailures: Record<string,boolean>;
+
+  static loadDownloadFailures() {
+      try {
+        this.downloadFailures = JSON.parse(readFileSync(`${__dirname}/download-failures.json`).toString());
+      } catch (e) {
+        console.log("download-failures.json  load error:"+e.message);
+        this.downloadFailures = {};
+      }
+  }
+
+  static addDownloadFailure(url: string) {
+    this.downloadFailures[url] = true;
+    try {
+      writeFileSync(`${__dirname}/download-failures.json`, JSON.stringify(this.downloadFailures));
+    } catch (e) {
+      console.log("download-failures.json  save error:"+e.message);
+    }
+  }
+
+  static removeDownloadFailure(url: string) {
+    delete this.downloadFailures[url];
+    try {
+      writeFileSync(`${__dirname}/download-failures.json`, JSON.stringify(this.downloadFailures));
+    } catch (e) {
+      console.log("download-failures.json  save error:"+e.message);
+    }
+  }
+
   static async download(app: App, options: AppOptionsWithSuggestions = {}) {
     const o = { ...DEFAULT_APP_OPTIONS, ...cleanObject(options) };
+
+    this.loadDownloadFailures();
 
     if ((typeof o.version!="string") || isSpecialAppVersionToken(o.version)) {
       const repoUrl = makeRepoUrl(app);
@@ -129,6 +161,19 @@ export class APKMirrorDownloader {
       console.log(`Downloading ${app.repo} ${o.version}...`);
       await this.downloadAllVariants(app, options, variantsUrl);
     }
+
+    if (o.retryDownloadFailures) {
+      let fs = Object.keys(this.downloadFailures);
+      if (fs.length) {
+        console.log("\n\nretryDownloadFailures : "+fs.length+" items...\n");
+        for (let vurl of fs) {
+          await this.downloadVariantUrl(options, vurl);
+        }
+      } else {
+        console.log("\nretryDownloadFailures : no download failure items...\n");
+      }
+    }
+
   }
 
   static async downloadAllVariants(app: App, options: AppOptionsWithSuggestions, variantsUrl: string) {
@@ -220,49 +265,48 @@ export class APKMirrorDownloader {
   }
 
   static async downloadVariant(options: AppOptionsWithSuggestions, selectedVariant: Variant) {
+      console.log("Variant:", JSON.stringify(selectedVariant,null,2));
+      return this.downloadVariantUrl(options, selectedVariant.url);
+  }
+
+  static async downloadVariantUrl(options: AppOptionsWithSuggestions, selectedVariantUrl: string) {
 
     const o = { ...DEFAULT_APP_OPTIONS, ...cleanObject(options) };
 
-    const finalDownloadUrl = await getFinalDownloadUrl(selectedVariant.url);
+    try {
+      const finalDownloadUrl = await getFinalDownloadUrl(selectedVariantUrl);
 
-    console.log(`Downloading variant ${JSON.stringify(selectedVariant)}  finalDownloadUrl:${finalDownloadUrl}...`);
+      console.log(`Downloading variant ${selectedVariantUrl} -> finalDownloadUrl:${finalDownloadUrl}...`);
 
-    return fetch(finalDownloadUrl).then(async res => {
-      const filename = extractFileNameFromUrl(res.url);
-      const extension = filename.split(".").pop()!;
+      return fetch(finalDownloadUrl).then(async res => {
+        const filename = extractFileNameFromUrl(res.url);
+        const extension = filename.split(".").pop()!;
 
-      const outDir = o.outDir ?? ".";
-      const outFile = ensureExtension(o.outFile ?? filename, extension);
-      const dest = `${outDir}/${outFile}`;
+        const outDir = o.outDir ?? ".";
+        const outFile = ensureExtension(o.outFile ?? filename, extension);
+        const dest = `${outDir}/${outFile}`;
 
-      if (!o.overwrite && existsSync(dest)) {
+        if (!o.overwrite && existsSync(dest)) {
 
-        console.log(`(!overwrite+exists:skipped)\n`);
+          console.log(`(!overwrite+exists:skipped)\n`);
 
-        return { dest, skipped: true as const };
+          return { dest, skipped: true as const };
+        }
+
+        await Bun.write(dest, res);
+
+        console.log(`\n`);
+
+        return { dest, skipped: false as const };
+      });
+    } catch (e) {
+      if (e instanceof RedirectError) {
+        console.log("WARN "+e.message+", saved to tmp download failures.");
+        this.addDownloadFailure(selectedVariantUrl);
+      } else {
+        throw e;
       }
-
-      await Bun.write(dest, res);
-
-      console.log(`\n`);
-
-      return { dest, skipped: false as const };
-    });
-
-
-    /*
-    v2
-    console.log(`Download url: ${downloadUrl}...`);
-    const filename = extractFileNameFromUrl(downloadUrl);
-    const outDir = o.outDir ?? ".";
-
-    if (existsSync(`${outDir}/${filename}`)) {
-        console.log(`Already exists: ${filename}`);
-    } else {
-        console.log(`Downloading ${filename}...`);
-        let dmp = execSync(`curl --output ${outDir}/${filename} ${downloadUrl}`);
-        console.log(`Downloaded ${filename}:${dmp}`);
     }
-    */
+
   }
 }
