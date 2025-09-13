@@ -19,6 +19,7 @@ import {
   makeRepoUrl,
   makeVariantsUrl,
 } from "./utils";
+import { execSync } from "child_process";
 
 export type APKMDOptions = {
   arch?: AppOptions["arch"];
@@ -214,7 +215,7 @@ export class APKMirrorDownloader {
     }
 
     for (let variant of variants) {
-      this.downloadVariant(options, variant);
+      await this.downloadVariant(options, variant);
     }
   }
 
@@ -223,9 +224,9 @@ export class APKMirrorDownloader {
 
     const o = { ...DEFAULT_APP_OPTIONS, ...cleanObject(options) };
 
-    const finalDownloadUrl = await getFinalDownloadUrl(selectedVariant.url);
+    const downloadUrl = await getFinalDownloadUrl(selectedVariant.url);
 
-    return fetch(finalDownloadUrl).then(async res => {
+    return fetch(downloadUrl).then(async res => {
       const filename = extractFileNameFromUrl(res.url);
       const extension = filename.split(".").pop()!;
 
@@ -246,5 +247,21 @@ export class APKMirrorDownloader {
 
       return { dest, skipped: false as const };
     });
+
+
+    /*
+    v2
+    console.log(`Download url: ${downloadUrl}...`);
+    const filename = extractFileNameFromUrl(downloadUrl);
+    const outDir = o.outDir ?? ".";
+
+    if (existsSync(`${outDir}/${filename}`)) {
+        console.log(`Already exists: ${filename}`);
+    } else {
+        console.log(`Downloading ${filename}...`);
+        let dmp = execSync(`curl --output ${outDir}/${filename} ${downloadUrl}`);
+        console.log(`Downloaded ${filename}:${dmp}`);
+    }
+    */
   }
 }
