@@ -303,6 +303,9 @@ export class APKMirrorDownloader {
 
         await Bun.write(dest, res);
 
+        console.log("Downloaded. Waiting 20 sec to avoid robot detection..");
+        await delayAsync(20000);
+
         console.log(`\n`);
 
         return { dest, skipped: false };
